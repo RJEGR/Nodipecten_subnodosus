@@ -42,7 +42,7 @@ by_count <- 1; by_freq <- 2
 
 keep <- rowSums(COUNTS > by_count) >= by_freq
 
-sum(keep) # N transcripts
+sum(keep)/nrow(COUNTS) # 0.8129889 % N transcripts
 
 nrow(COUNTS <- COUNTS[keep,])
 
@@ -116,3 +116,45 @@ for (j in 1:length(CONTRAST)) {
 do.call(rbind, out) -> RES
 
 # AFTER THEN, EXPORT RESULTS FILE AND CONTINUE W/ GENE ONTOLOGY ENRICHMENT ANALYSIS
+
+RES.P <- RES %>% filter( padj < 0.05 & abs(log2FoldChange) > 2) 
+
+RES.P %>% dplyr::count(sampleB)
+
+UPSETDF <- RES.P %>% 
+  # mutate(SIGN = sign(log2FoldChange)) %>%
+  filter(log2FoldChange < 0 ) %>% # ONLY UP-EXPRESSED IN EXPERIMENTAL CNTRST (i.e. DOWN-EXP. IN Ref)
+  group_by(Name) %>%
+  summarise(across(sampleB, .fns = list), n = n()) 
+
+library(ggupset)
+
+UPSETDF %>%
+  ggplot(aes(x = sampleB)) +
+  geom_bar(position = position_dodge(width = 1)) +
+  geom_text(stat='count', aes(label = after_stat(count)), 
+    position = position_dodge(width = 1), vjust = -0.5, family = "GillSans", size = 3.5) +
+  scale_x_upset(order_by = "degree", reverse = F) +
+  theme_bw(base_family = "GillSans") +
+  theme_combmatrix(combmatrix.panel.point.color.fill = "black",
+    combmatrix.panel.line.size = 0, base_family = "GillSans") +
+  # axis_combmatrix(levels = c("24 HPF", "110 HPF")) +
+  labs(x = '', y = 'Number of transcripts (up-expressed)') +
+  # scale_color_manual("", values = col) +
+  # scale_fill_manual("", values =  col) +
+  guides(fill = guide_legend(title = "", nrow = 1)) -> p1
+
+p1 <- p1 + theme(legend.position = "top",
+  panel.border = element_blank(),
+  plot.title = element_text(hjust = 0),
+  plot.caption = element_text(hjust = 0),
+  panel.grid.minor.y = element_blank(),
+  panel.grid.major.y = element_blank(),
+  panel.grid.major.x = element_blank(),
+  panel.grid.minor.x = element_blank(),
+  strip.background.y = element_blank())
+
+p1
+
+UPSETDF %>% filter(n == 1) %>% dplyr::count(sampleB)
+UPSETDF %>% filter(n == 1) %>% unnest(sampleB)
