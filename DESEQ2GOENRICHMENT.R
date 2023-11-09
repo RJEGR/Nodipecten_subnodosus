@@ -143,5 +143,7 @@ data %>%
     panel.grid.minor.x = element_blank(),
     panel.grid.major.x = element_blank(),
     axis.text.y = element_text(angle = 0, size = 7),
-    axis.text.x = element_text(angle = 90, size = 10))
-  
+    axis.text.x = element_text(angle = 90, size = 10)) -> p
+
+
+ggsave(p, filename = 'GO_ENRICHMENT.png', path = path, width = 5, height = 10, device = png, dpi = 300)
