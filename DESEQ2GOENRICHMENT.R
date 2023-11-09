@@ -59,6 +59,7 @@ gene2GO <- lapply(gene2GO, unlist)
 
 print(which_sam <- QUERIES %>% distinct(sampleB) %>% pull())
 
+# TOPGO ====
 
 allRes <- list()
 
@@ -85,4 +86,62 @@ for (i in which_sam) {
 
 data <- do.call(rbind, allRes) %>% as_tibble()
 
+write_rds(data, file = paste0(path, "DESEQ2TOPGO.rds"))
 
+# REVIGO ====
+# Additionally, run semantic simmilarity analysis in order to split parent terms themes
+
+GO.IDS <- data %>% distinct(GO.ID) %>% pull() %>% sort()
+
+SEMANTIC_SEARCH <- function(x, orgdb = "org.Ce.eg.db", semdata = semdata) {
+  
+  
+  require(rrvgo)
+  
+  # semdata <- read_rds(paste0(wd, orgdb, ".rds"))
+  
+  x <- sort(x)
+  
+  SimMatrix <- calculateSimMatrix(x, 
+    orgdb = orgdb,
+    ont="BP", 
+    semdata = semdata,
+    method = 'Wang')
+  
+  data <- reduceSimMatrix(SimMatrix, threshold = 0.9, orgdb = orgdb) 
+  
+  y <- cmdscale(as.matrix(as.dist(1 - SimMatrix)), eig = TRUE, k = 2)
+  
+  data <- cbind(as.data.frame(y$points), data[match(rownames(y$points), data$go),])
+  
+  return(data)
+}
+
+REVIGO <- SEMANTIC_SEARCH(GO.IDS, orgdb, semdata)
+
+data <- left_join(data, REVIGO, by = c("GO.ID" = "go"))
+
+# PLOT
+
+data %>%
+  group_by(sampleB) %>%
+  mutate(size = size / max(size)) %>%
+  filter(size > 0) %>%
+  # arrange(desc(size), .by_group = T) %>%
+  # mutate(Term = factor(Term)) %>%
+  mutate(Term = fct_reorder(Term, size, .desc = F)) %>%
+  # mutate(term = fct_reorder2(Term, sampleB, size, .desc = F)) %>%
+  ggplot(aes(y = Term, x = size, color = -log10(p.adj.ks))) + # 
+  facet_grid(sampleB ~ ., switch = "y", scales = "free_y") +
+  geom_segment(aes(xend = 0, yend = Term), linewidth = 1) +
+  labs(y = "Biological process (Up-expressed)", x = "Enrichment frac.") +
+  # scale_color_viridis_c("-log10(padj)", option = "inferno") +
+  theme(legend.position = "top",
+    panel.border = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    axis.text.y = element_text(angle = 0, size = 7),
+    axis.text.x = element_text(angle = 90, size = 10))
+  
