@@ -138,7 +138,7 @@ UPSETDF %>%
   geom_text(stat='count', aes(label = after_stat(count)), 
     position = position_dodge(width = 1), vjust = -0.5, family = "GillSans", size = 3.5) +
   scale_x_upset(order_by = "degree", reverse = F) +
-  theme_bw(base_family = "GillSans") +
+  theme_bw() +
   theme_combmatrix(combmatrix.panel.point.color.fill = "black",
     combmatrix.panel.line.size = 0, base_family = "GillSans", base_size = 16) +
   # axis_combmatrix(levels = recode_to) +
@@ -157,6 +157,7 @@ p1 <- p1 + theme(legend.position = "none",
   panel.grid.minor.x = element_blank(),
   strip.background.y = element_blank())
 
-p1
+ggsave(p1, filename = 'UPSET.png', path = path, width = 10, height = 5, device = png, dpi = 300)
+
 
 
