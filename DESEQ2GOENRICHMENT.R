@@ -88,6 +88,8 @@ data <- do.call(rbind, allRes) %>% as_tibble()
 
 write_rds(data, file = paste0(path, "DESEQ2TOPGO.rds"))
 
+data <- read_rds(paste0(path, "DESEQ2TOPGO.rds"))
+
 # REVIGO ====
 # Additionally, run semantic simmilarity analysis in order to split parent terms themes
 
@@ -117,9 +119,12 @@ SEMANTIC_SEARCH <- function(x, orgdb = "org.Ce.eg.db", semdata = semdata) {
   return(data)
 }
 
-REVIGO <- SEMANTIC_SEARCH(GO.IDS, orgdb, semdata)
+# REVIGO <- SEMANTIC_SEARCH(GO.IDS, orgdb, semdata)
 
-data <- left_join(data, REVIGO, by = c("GO.ID" = "go"))
+# data <- left_join(data, REVIGO, by = c("GO.ID" = "go"))
+
+write_rds(data, file = paste0(path, "DESEQ2TOPGO.rds"))
+
 
 # PLOT
 
