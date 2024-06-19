@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+data/isoforms.counts.matrix
+data/Trinotate.xls
+data/Trinotate_gene_ontology
+data/Trinotate_trans_ontology
+R/R.Rproj

@@ -68,6 +68,12 @@ db_index_name=idx
 
 
 # 2) ALIGN READS BACK TO THE REFERENCE
+#if [ ! -f "${base}.sorted.bam" ]; then
+#    left_file=${base}_1.P.qtrim.fq.gz
+#    right_file=${base}_2.P.qtrim.fq.gz
+#else
+#    echo "Alignment for '${base}.' samples already exists."
+#fi
 
 for i in $(ls *1.P.qtrim.fq.gz);
 do
@@ -77,7 +83,6 @@ right_file=${base}_2.P.qtrim.fq.gz
 
 bam_file=${base}.sorted.bam
 met_file=${base}.met.txt
-met_stderr=${base}.stderr # too memory  --met-stderr $met_stderr
 
 bowtie2 --met-file $met_file $aligner_params $read_type -X $max_ins_size -x $db_index_name -1 $left_file -2 $right_file -p $thread_count | samtools view -@ $thread_count -F 4 -S -b | samtools sort -@ $thread_count -n -o $bam_file
 
