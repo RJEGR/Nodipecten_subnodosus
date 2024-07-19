@@ -15,6 +15,7 @@ export PATH=$PATH:$EXPORT
 
 EXPORT=/LUSTRE/apps/bioinformatica/RSEM/bin/samtools-1.3/
 export PATH=$PATH:$EXPORT
+
 ```
 
 ## Build index
