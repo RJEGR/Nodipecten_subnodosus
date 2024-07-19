@@ -339,3 +339,4 @@ Results/01.Processing/fastqc_raw/N_9_CKDL230014575-1A_HJLJKBBXX_L3_1_fastqc.html
 Results/01.Processing/fastqc_raw/N_9_CKDL230014575-1A_HJLJKBBXX_L3_1_fastqc.zip
 Results/01.Processing/fastqc_raw/N_9_CKDL230014575-1A_HJLJKBBXX_L3_2_fastqc.html
 Results/01.Processing/fastqc_raw/N_9_CKDL230014575-1A_HJLJKBBXX_L3_2_fastqc.zip
+*.log
