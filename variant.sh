@@ -88,7 +88,7 @@ gatk MergeBamAlignment \
             --ALIGNED_BAM ${SORTEDBAM%.bam}.al.bam \
             --UNMAPPED_BAM ${SORTEDBAM%.bam}.uT.bam \
             --SORT_ORDER coordinate \
-            --OUTPUT ${base_name}.merged.bam \
+            --OUTPUT $PWD/${base_name}.merged.bam \
             --INCLUDE_SECONDARY_ALIGNMENTS false \
             --VALIDATION_STRINGENCY SILENT
  
