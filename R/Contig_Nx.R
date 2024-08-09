@@ -79,9 +79,15 @@ df <- do.call(rbind, df)
 
 df <- mutate(df, x = factor(x, levels = unique(df$x)))
 
-recode_to <- rev(unique(df$Assembly))
+# recode_to <- rev(unique(df$Assembly))
 
-recode_to <- structure(c("All-sam", "Qphred_buenas","Qphred_bajas","Evigene"), names = recode_to)
+recode_to <- c("evigene_transcripts.fasta", "good.Trinity.fasta", "Trinity.fasta", "Trinity_ensamble_experimental.fasta", "Trinity_ensamble_bajas.fasta", 
+  "bad.Trinity.fasta")
+
+
+recode_to <- structure(c("Evigene", "good.Trinity","All-sam (Trinity)","Qphred_buenas (Pau)", "Qphred_bajas (Pau)", "bad.Trinity"), names = recode_to)
+
+# recode_to <- structure(c("All-sam", "Qphred_buenas","Qphred_bajas","Evigene"), names = recode_to)
 
 df <- mutate(df, Assembly = dplyr::recode_factor(Assembly, !!!recode_to))
 
@@ -90,14 +96,16 @@ df <- mutate(df, Assembly = dplyr::recode_factor(Assembly, !!!recode_to))
 
 p <- ggplot(df, aes(x = x, y = n, group = Assembly, color = Assembly)) +
   geom_vline(xintercept = "N50", linetype="dashed", alpha=0.5) +
-  geom_point() +
-  ggplot2::geom_path() +
+  ggplot2::geom_path(linewidth = 1.5, lineend = "round") +
+  geom_point(shape = 21, size = 4) +
   labs(x = "Nx", y = "Contig length", color = "Assembly method") +
-  scale_color_grey("") +
-  scale_fill_grey("") +
+  ggsci::scale_color_jco() +
+  ggsci::scale_fill_jco() +
+  # scale_color_grey("") +
+  # scale_fill_grey("") +
   # scale_fill_manual("Assembly method", values = c("black", "grey89")) +
-  guides(color=guide_legend(nrow = 1)) +
-  theme_bw(base_size = 11, base_family = "GillSans") +
+  guides(color=guide_legend(title = "", nrow = 1)) +
+  theme_bw(base_size = 12, base_family = "GillSans") +
   theme(legend.position = "top", 
     strip.background = element_rect(fill = 'grey89', color = 'white'),
     axis.line.x = element_blank(),
@@ -113,12 +121,15 @@ ggplot(df, aes(y = x, x = n_frac, group = Assembly, fill = Assembly)) +
   # ggplot2::geom_col() +
   ggplot2::geom_col(position = position_dodge2(reverse = T)) +
   labs(x = "Frac. of Scaffolds", y = "Nx", fill = "Assembly method") +
-  scale_color_grey("") +
-  scale_fill_grey("") +
-  guides(color=guide_legend(nrow = 1)) +
-  theme_bw(base_size = 14, base_family = "GillSans") +
-  theme(legend.position = "top", 
+  # scale_color_grey("") +
+  # scale_fill_grey("") +
+  ggsci::scale_color_jco() +
+  ggsci::scale_fill_jco() +
+  guides(fill=guide_legend(title = "", ncol = 1)) +
+  theme_bw(base_size = 16, base_family = "GillSans") +
+  theme(legend.position = "left", 
     strip.background = element_rect(fill = 'grey89', color = 'white'),
     axis.line.x = element_blank(),
     axis.line.y = element_blank()) 
 
+df %>% group_by(Assembly) %>% summarise(n_seqs = sum(n_seqs), n_frac = sum(n_frac))
