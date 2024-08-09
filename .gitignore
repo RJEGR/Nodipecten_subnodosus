@@ -613,3 +613,6 @@ rsem_stats_dir/N_8.stat/N_8.theta
 rsem_stats_dir/N_9.stat/N_9.cnt
 rsem_stats_dir/N_9.stat/N_9.model
 rsem_stats_dir/N_9.stat/N_9.theta
+Results/01.Processing/multiqc_data/multiqc_data.json
+Results/01.Processing/multiqc_data/multiqc_fastqc.txt
+Results/01.Processing/multiqc_data/multiqc_general_stats.txt
