@@ -58,7 +58,7 @@ if [ ! -f "S1_BOWTIE2_BAM_FILES/$bam_file" ]; then
     echo "Aligning reads back to reference"
 
     bowtie2 --met-file $met_file $aligner_params $read_type -X $max_ins_size \
-    -x $ref_index_name -1 $left_file -2 $right_file -p $thread_count 2> ${bs}.stderr | \
+    -x INDEX/$ref_index_name -1 $left_file -2 $right_file -p $thread_count 2> ${bs}.stderr | \
     samtools view -@ $thread_count -F 4 -S -b | samtools sort -@ $thread_count -n -o S1_BOWTIE2_BAM_FILES/$bam_file
 else
     echo "File $bam_file already exists in S1_BOWTIE2_BAM_FILES directory"
@@ -68,20 +68,43 @@ fi
 unlink $left_file
 unlink $right_file
 
-echo "Continue with step three"
+done
 
-thread_count=$SLURM_NPROCS
+mkdir -p stats
+mv *.met.txt stats
+mv *.stderr stats
+mv stats S1_BOWTIE2_BAM_FILES
+
+# grep 'overall alignment rate' S1_BOWTIE2_BAM_FILES/stats/*.stderr
+
+echo "Continue with step three"
 
 rsem_prefix=idx # conveniently as $ref_index_name
 
-rsem-prepare-reference $REFERENCE $rsem_prefix
+if [ ! -f "$rsem_prefix.seq" ]; then
+    rsem-prepare-reference $REFERENCE $rsem_prefix
+else
+    echo "index '$rsem_prefix' already exists."
+fi
 
 # 2.1) Convert bam to rsem 
 
+mkdir -p S2_RSEM_CALCULATION_FILES
+
 for i in $(ls S1_BOWTIE2_BAM_FILES/*.sorted.bam);
 do
-bam_for_rsem=${i%.bam}.rsem
-convert-sam-for-rsem -p $thread_count $i $bam_for_rsem
+
+bs=`basename ${i%.bam}`
+bam_for_rsem=${bs}.rsem
+
+if [ ! -f "S2_RSEM_CALCULATION_FILES/$bs.rsem.bam" ]; then
+    
+    echo "convert-sam-for-rsem fo file $i"
+
+   convert-sam-for-rsem -p $thread_count $i $bam_for_rsem
+else
+    echo "File $bam_for_rsem already exists in S2_RSEM_CALCULATION_FILES directory"
+fi
 done
 
 fragment_length=200
@@ -96,8 +119,9 @@ SS_opt="--forward-prob 1.0"
 rsem_bam_flag="--no-bam-output"
 
 # Estimate abundance:
+echo "Continue with final step"
 
-for i in $(ls *.rsem.bam);
+for i in $(ls S2_RSEM_CALCULATION_FILES/*.rsem.bam);
 do
 output_prefix=${i%.sorted.rsem.bam}
 rsem-calculate-expression $no_qualities_string $paired_flag_text -p $thread_count $fraglength_info_txt $keep_intermediate_files_opt $SS_opt $rsem_bam_flag --bam $i $rsem_prefix $output_prefix
