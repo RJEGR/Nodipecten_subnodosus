@@ -19,6 +19,10 @@ dir <- "/Users/cigom/Documents/GitHub/Nodipecten_subnodosus/Results/Assembly-sta
 
 f <- list.files(dir, "fasta", full.names = T)
 
+f <- f[!grepl("ensamble|evigene", basename(f))]
+
+basename(f)
+
 contig_Nx <- function(f) {
   
   DNA <- Biostrings::readDNAStringSet(f)
@@ -81,11 +85,19 @@ df <- mutate(df, x = factor(x, levels = unique(df$x)))
 
 # recode_to <- rev(unique(df$Assembly))
 
-recode_to <- c("evigene_transcripts.fasta", "good.Trinity.fasta", "Trinity.fasta", "Trinity_ensamble_experimental.fasta", "Trinity_ensamble_bajas.fasta", 
+# recode_to <- c("evigene_transcripts.fasta", "good.Trinity.fasta", "Trinity.fasta", "Trinity_ensamble_experimental.fasta", "Trinity_ensamble_bajas.fasta", 
+#   "bad.Trinity.fasta")
+# 
+# 
+# recode_to <- structure(c("Evigene", "good.Trinity","All-sam (Trinity)","Qphred_buenas (Pau)", "Qphred_bajas (Pau)", "bad.Trinity"), names = recode_to)
+
+recode_to <- c("CDHIT-95_good.Trinity.AllSamples.fasta", 
+  "good.Trinity.fasta", 
+  "Trinity.fasta", 
   "bad.Trinity.fasta")
 
 
-recode_to <- structure(c("Evigene", "good.Trinity","All-sam (Trinity)","Qphred_buenas (Pau)", "Qphred_bajas (Pau)", "bad.Trinity"), names = recode_to)
+recode_to <- structure(c("CDHIT-95_good.Trinity", "All-sam (good.Trinity)", "All-sam (Trinity)", "bad.Trinity"), names = recode_to)
 
 # recode_to <- structure(c("All-sam", "Qphred_buenas","Qphred_bajas","Evigene"), names = recode_to)
 
@@ -115,7 +127,7 @@ p
 
 # p
 
-ggsave(p, filename = 'Nx-methods.png', path = dir, width = 4, height = 3, device = png, dpi = 300)
+ggsave(p, filename = 'Nx-methods_2.png', path = dir, width = 4, height = 3, device = png, dpi = 300)
 
 ggplot(df, aes(y = x, x = n_frac, group = Assembly, fill = Assembly)) +
   # ggplot2::geom_col() +
