@@ -36,7 +36,7 @@ my_sp_lev <- c("Mollusca","Metazoa","Eukaryota","Mammalia","Bacteria")
 
 figure <- df2 %>%
   mutate(facet = "Completeness") %>%
-  filter(Method != "Trinity-Longest") %>%
+  filter(!Method %in% c("Evigene") ) %>%
   # filter(my_species != "Bacteria") %>%
   mutate(category = factor(category, levels = rev(names))) %>%
   mutate(my_species = factor(my_species, levels = my_sp_lev)) %>%
@@ -44,7 +44,7 @@ figure <- df2 %>%
   facet_grid(my_species~ facet) +
   geom_col(position = position_stack(reverse = TRUE), width = 0.75) +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  labs(y = "% BUSCOs", x = "Assembly method") +
+  labs(y = "% BUSCOs", x = "Assembly step") +
   coord_flip() +
   scale_fill_manual("", values = col, labels = rev(labels)) +
   guides(fill=guide_legend(nrow = 4)) +
