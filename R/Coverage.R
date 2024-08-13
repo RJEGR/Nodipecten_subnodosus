@@ -1,5 +1,6 @@
 # Ricardo Gomez-Reyes
 # Visualize coverage of Nodipecten subnodosus
+# https://github.com/MultiQC/MultiQC/blob/main/multiqc/modules/hisat2/hisat2.py
 
 rm(list = ls())
 
@@ -22,7 +23,6 @@ df1 <- df1 %>% mutate(Sample = sapply(strsplit(Sample, "_CK"), `[`, 1))
 
 df1 %>% group_by(Method) %>% summarise(mean(overall_alignment_rate))
 
-
 cols <- df1 %>%
   select(starts_with("paired_aligned")) %>% names()
 
@@ -37,18 +37,19 @@ df1 <- df1 %>%
   mutate(pct_align = Reads / sum(Reads))
 
 
-category <- "paired_aligned_mate_none_halved"
+category <- c("paired_aligned_mate_none_halved","paired_aligned_none","paired_aligned_mate_none")
 
 p <- df1 %>%
   mutate(Method = stringr::str_to_title(Method)) %>%
   mutate(Method = gsub("_multiqc_bowtie2.Txt", "", Method)) %>%
-  mutate(Align = ifelse(Category != category, "Transcriptome coverage", "Unalignment")) %>%
+  mutate(Align = ifelse(!Category %in% category, "Transcriptome coverage", "Unalignment")) %>%
+  mutate(Method = factor(Method, levels = rev(c("Trinity.good","Cdhit-95", "Evigene")))) %>%
   # group_by(Sample, Method, Align) %>%
   # summarise(pct_align = sum(pct_align)) %>%
   filter(Align == "Transcriptome coverage") %>%
   ggplot(aes(y = Method, x = pct_align, fill = Category)) +
   geom_col() +
-  facet_grid(  Sample ~., scales = "free_y", space = "free_y", switch = "y") +
+  facet_grid(  Sample ~Align, scales = "free_y", space = "free_y", switch = "y") +
   scale_x_continuous(labels = scales::percent_format(scale = 100)) +
   scale_y_discrete(position = "right") +
   labs(y = "Assembly method", x = "% Alignment") +
@@ -65,4 +66,4 @@ p <- df1 %>%
     axis.line.y = element_blank())
 
 
-ggsave(p, filename = 'alignment-methods.png', path = dir, width = 4.5, height = 8, device = png, dpi = 300)
+ggsave(p, filename = 'alignment-methods.png', path = dir, width = 4.5, height = 10, device = png, dpi = 300)
