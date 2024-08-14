@@ -128,7 +128,12 @@ rsem-calculate-expression $no_qualities_string $paired_flag_text -p $thread_coun
 
 done
 
+# OUTPUT COUNT MATRIX TO DIFFERENTIAL EXPRESSION ANALYSIS\
+
+rsem-generate-data-matrix S2_RSEM_CALCULATION_FILES/*.isoforms.results > isoforms.counts.matrix
+rsem-generate-data-matrix S2_RSEM_CALCULATION_FILES/*.genes.results > genes.counts.matrix
 #
+
 
 for i in $(ls *.sorted.bam)
 do
