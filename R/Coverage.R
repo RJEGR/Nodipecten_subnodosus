@@ -23,6 +23,32 @@ df1 <- df1 %>% mutate(Sample = sapply(strsplit(Sample, "_CK"), `[`, 1))
 
 df1 %>% group_by(Method) %>% summarise(mean(overall_alignment_rate))
 
+
+p <- df1 %>%
+  mutate(Method = stringr::str_to_title(Method)) %>%
+  mutate(Method = gsub("_multiqc_bowtie2.Txt", "", Method)) %>%
+  mutate(Method = factor(Method, levels = rev(c("Trinity.good","Cdhit-95", "Evigene")))) %>%
+  ggplot(aes(y = Method, x = overall_alignment_rate)) +
+  geom_col(fill = "gray75") +
+  facet_grid(  Sample ~., scales = "free_y", space = "free_y", switch = "y") +
+  scale_x_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_y_discrete(position = "right") +
+  labs(y = "Assembly method", x = "% Alignment") +
+  # coord_flip() +
+  scale_fill_grey("") +
+  # scale_fill_manual("Assembly method", values = c("black", "grey89")) +
+  guides(fill=guide_legend(nrow = 10)) +
+  theme_bw(base_size = 7, base_family = "GillSans") +
+  theme(legend.position = "right", 
+    strip.background = element_rect(fill = 'grey89', color = 'white'),
+    strip.text.y.left = element_text(angle = 0, hjust = 1),
+    strip.placement = "outside",
+    axis.line.x = element_blank(),
+    axis.line.y = element_blank())
+
+ggsave(p, filename = 'alignment-methods.png', path = dir, width = 4.5, height = 10, device = png, dpi = 300)
+
+
 cols <- df1 %>%
   select(starts_with("paired_aligned")) %>% names()
 
