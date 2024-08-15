@@ -96,7 +96,7 @@ do
 
 bs=`basename ${i%.bam}`
 bam_for_rsem=${bs}.rsem
-
+ls
 if [ ! -f "S2_RSEM_CALCULATION_FILES/$bs.rsem.bam" ]; then
     
     echo "convert-sam-for-rsem fo file $i"
@@ -130,8 +130,8 @@ done
 
 # OUTPUT COUNT MATRIX TO DIFFERENTIAL EXPRESSION ANALYSIS\
 
-rsem-generate-data-matrix S2_RSEM_CALCULATION_FILES/*.isoforms.results > isoforms.counts.matrix
-rsem-generate-data-matrix S2_RSEM_CALCULATION_FILES/*.genes.results > genes.counts.matrix
+rsem-generate-data-matrix S2_RSEM_CALCULATION_FILES/*.isoforms.results > ${ref_index_name}_isoforms.matrix
+rsem-generate-data-matrix S2_RSEM_CALCULATION_FILES/*.genes.results > ${ref_index_name}_genes.matrix
 #
 
 
