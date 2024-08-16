@@ -101,7 +101,7 @@ if [ ! -f "S2_RSEM_CALCULATION_FILES/$bs.rsem.bam" ]; then
     
     echo "convert-sam-for-rsem fo file $i"
 
-   convert-sam-for-rsem -p $thread_count $i $bam_for_rsem
+   convert-sam-for-rsem -p $thread_count $i S2_RSEM_CALCULATION_FILES/$bam_for_rsem
 else
     echo "File $bam_for_rsem already exists in S2_RSEM_CALCULATION_FILES directory"
 fi
@@ -141,3 +141,4 @@ samtools flagstat $i > ${i%.sorted.bam}.flagstats.txt
 done
 
 exit
+
