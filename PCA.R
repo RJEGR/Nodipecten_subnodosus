@@ -146,6 +146,10 @@ hc[[2]]$labels <- gsub("S2_RSEM_CALCULATION_FILES/","",hc[[2]]$labels)
 
 hc[[2]]$labels <- sapply(strsplit(hc[[2]]$labels, "_CK"), `[`, 1)
 
+hc[[1]]$labels <- gsub("S2_RSEM_CALCULATION_FILES/","",hc[[1]]$labels)
+hc[[1]]$labels <- sapply(strsplit(hc[[1]]$labels, "_CK"), `[`, 1)
+
+
 identical(sort(hc[[1]]$labels), sort(hc[[2]]$labels))
 
 dend1 <- as.dendrogram(hc[[1]])
@@ -153,7 +157,7 @@ dend2 <- as.dendrogram(hc[[2]])
 
 
 # Create a list to hold dendrograms
-dend_list <- dendlist("Evigene" = dend1, "CDHIT-95_good.Trinity" = dend2)
+dend_list <- dendlist("CDHIT-95_good.Trinity" = dend1, "good.Trinity" = dend2)
 
 
 # Align and plot two dendrograms side by side
