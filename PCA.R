@@ -45,7 +45,9 @@ PCA <- function(f) {
 
 
 PCAdf <- lapply(f, PCA)
+
 percentVar1 <- paste0(PCAdf[[2]][[2]]$percentVar[1], "% ,",PCAdf[[1]][[2]]$percentVar[1])
+
 percentVar1 <- paste0("PC1, VarExp: ", percentVar1, "%")
 
 
@@ -57,8 +59,12 @@ PCAdf_ <- rbind(PCAdf[[1]][[1]], PCAdf[[2]][[1]])
 
 rownames(PCAdf_) <- gsub("S2_RSEM_CALCULATION_FILES/","",rownames(PCAdf_))
 
-recode_to <- c("isoforms.counts.matrix", "isoform.evigene.counts.ematrix")
-recode_to <- structure(c("CDHIT-95_good.Trinity", "Evigene"), names = recode_to)
+# recode_to <- c("isoforms.counts.matrix", "isoform.evigene.counts.ematrix")
+# recode_to <- structure(c("CDHIT-95_good.Trinity", "Evigene"), names = recode_to)
+
+recode_to <- c("CDHIT-95_good.Trinity.isoforms.counts.matrix", 
+  "good.Trinity.fasta_isoforms.matrix")
+recode_to <- structure(c("CDHIT-95_good.Trinity", "good.Trinity."), names = recode_to)
 
 
 PCAdf_ %>%
