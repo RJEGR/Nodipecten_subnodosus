@@ -1,12 +1,15 @@
 
 library(tidyverse)
 
-# dir <- "~/Documents/GitHub/Nodipecten_subnodosus/data/" # TO contrat
 
 dir <- "~/Documents/GitHub/Nodipecten_subnodosus/Results/04.Quantification/"
 
 
 f <- list.files(dir, pattern = "isoform.", full.names = T) 
+
+Manifest <- list.files(dir, pattern = "Manifest.tsv", full.names = T) 
+
+Manifest <- read_tsv(Manifest) %>% rename("LIBRARY_ID" = "Group2")
 
 # cols <- read_tsv(f, skip = 1) %>% select(contains(".sorted.bam")) %>% names()
 
@@ -14,7 +17,9 @@ PCA <- function(f) {
   
   df <- read_tsv(f) 
   
-  m <- df %>% select(contains(".isoforms.results")) %>% as("matrix")
+  # m <- df %>% select(contains(".isoforms.results")) %>% as("matrix")
+  
+  m <- df %>% select_if(is.double) %>% as("matrix")
   
   colNames <- colnames(m)
   
@@ -62,17 +67,24 @@ rownames(PCAdf_) <- gsub("S2_RSEM_CALCULATION_FILES/","",rownames(PCAdf_))
 # recode_to <- c("isoforms.counts.matrix", "isoform.evigene.counts.ematrix")
 # recode_to <- structure(c("CDHIT-95_good.Trinity", "Evigene"), names = recode_to)
 
-recode_to <- c("CDHIT-95_good.Trinity.isoforms.counts.matrix", 
-  "good.Trinity.fasta_isoforms.matrix")
-recode_to <- structure(c("CDHIT-95_good.Trinity", "good.Trinity."), names = recode_to)
+# recode_to <- c("CDHIT-95_good.Trinity.isoforms.counts.matrix", "good.Trinity.fasta_isoforms.matrix")
+# recode_to <- structure(c("CDHIT-95_good.Trinity", "good.Trinity."), names = recode_to)
 
+recode_to <- c("CDHIT-95_good.Trinity.isoforms.counts.matrix", "count.isoform.counts3.matrix")
+recode_to <- structure(c("CDHIT-95_good.Trinity", "15-samples"), names = recode_to)
 
 PCAdf_ %>%
   mutate(Method = dplyr::recode_factor(Method, !!!recode_to)) %>%
   mutate(LIBRARY_ID = rownames(.)) %>%
   mutate(LIBRARY_ID = sapply(strsplit(LIBRARY_ID, "_CK"), `[`, 1)) %>%
+  mutate(LIBRARY_ID = sapply(strsplit(LIBRARY_ID, "_R"), `[`, 1)) %>%
+  left_join(Manifest, by = "LIBRARY_ID") %>% 
+  mutate(Group4 = ifelse(is.na(Group4), "Constante",Group4)) %>%
+  mutate(Group4 = ifelse(grepl("_Cao",LIBRARY_ID), "Caotica",Group4)) %>%
+  mutate(Group4 = ifelse(grepl("_Bas",LIBRARY_ID), "Basal",Group4)) %>%
+  mutate(Group4 = ifelse(grepl("_F0",LIBRARY_ID), "F0",Group4)) %>%
   mutate(g = substr(LIBRARY_ID, 1,2)) %>%
-  ggplot(., aes(PC1, PC2, color = g)) +
+  ggplot(., aes(PC1, PC2, color = Group4)) +
   theme_bw(base_size = 14, base_family = "GillSans") +
   # xlab(paste0("PC1, VarExp: ", percentVar[1], "%")) +
   # ylab(paste0("PC2, VarExp: ", percentVar[2], "%")) +
@@ -83,7 +95,8 @@ PCAdf_ %>%
   geom_abline(slope = 0, intercept = 0, linetype="dashed", alpha=0.5) +
   geom_vline(xintercept = 0, linetype="dashed", alpha=0.5) +
   geom_point(size = 7, alpha = 0.7) +
-  geom_text( family = "GillSans", mapping = aes(label = LIBRARY_ID), size = 3.5, color = "black") +
+  ggrepel::geom_text_repel( family = "GillSans", mapping = aes(label = LIBRARY_ID), size = 3.5, color = "black") +
+  # geom_text( family = "GillSans", mapping = aes(label = LIBRARY_ID), size = 3.5, color = "black") +
   theme(legend.position = "top") -> p
 
 p
