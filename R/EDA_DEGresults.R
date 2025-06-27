@@ -18,6 +18,7 @@ library(ggVennDiagram)
 path <- "~/Documents/MANO_DELEON/DATOS_Paulina_dir/"
 
 Manifest <- "metadata_experimental.tsv"
+
 Manifest <- read_tsv(list.files(path = path, pattern = Manifest, full.names = T)) %>%
   dplyr::rename("LIBRARY_ID" = "Library_ID") %>%
   mutate(groups = paste(Site, Condition, sep = "_"))
@@ -63,48 +64,74 @@ unique(DF$fileName)
 
 # Aclarar grupos con paulina
 
+
+
 recode_ref <- c("DEG_Bas_LOL_Ref.csv" = "LOL",
   "DEG_Cao_Bas_BLA.csv" = "Basal",
   "DEG_Cao_Bas_LOL.csv" = "Basal",
   "DEG_Cao_LOL_Ref.csv" = "LOL",
-  "DEG_Gral_Cao_Bas_Ref.csv" = "Basal")
+  "DEG_Gral_Cao_Bas_Ref.csv" = "Basal",
+  "DEG_Cte_Bas_LOL.csv" = "Basal",
+  "DEG_Cte_Bas_BLA.csv" = "Basal",
+  "DEG_Cte_LOL_Ref" = "LOL",
+  "DEG_Gral_Cte_Bas_Ref.csv" = "Basal")
 
 recode_contrast <- c("DEG_Bas_LOL_Ref.csv" = "BLA",
   "DEG_Cao_Bas_BLA.csv" = "Chaotic",
   "DEG_Cao_Bas_LOL.csv" = "Chaotic",
   "DEG_Cao_LOL_Ref.csv" = "BLA",
-  "DEG_Gral_Cao_Bas_Ref.csv" = "Chaotic")
+  "DEG_Gral_Cao_Bas_Ref.csv" = "Chaotic",
+  "DEG_Cte_Bas_LOL.csv" = "Cte",
+  "DEG_Cte_Bas_BLA.csv" = "Cte",
+  "DEG_Cte_LOL_Ref" = "BLA",
+  "DEG_Gral_Cte_Bas_Ref.csv" = "Cte")
 
 
 
 recode_design <- c("DEG_Bas_LOL_Ref.csv" = "Differences in populations (Basal site)",
   "DEG_Cao_Bas_BLA.csv" = "Specific acclim. to chaotic challenge (BLA)",
   "DEG_Cao_Bas_LOL.csv" = "Specific acclim. to chaotic challenge (LOL)",
-  "DEG_Cao_LOL_Ref.csv" = "Differences in populations (Chaotic site)",
-  "DEG_Gral_Cao_Bas_Ref.csv" = "Global acclimatation response to challenge (Chaotic)")
+  "DEG_Cao_LOL_Ref.csv" = "Differences in populations (Chaotic treatment)",
+  "DEG_Gral_Cao_Bas_Ref.csv" = "Global acclimatation response to challenge (Chaotic)",
+  "DEG_Cte_Bas_LOL.csv" = "Specific acclim. to cte challenge (LOL)",
+  "DEG_Cte_Bas_BLA.csv" = "Specific acclim. to cte challenge (BLA)",
+  "DEG_Cte_LOL_Ref" = "Differences in populations (Cte treatment)",
+  "DEG_Gral_Cte_Bas_Ref.csv" = "Global acclimatation response to challenge (Cte)")
 
 DF <- DF %>% dplyr::mutate(sampleA = dplyr::recode(fileName, !!!recode_ref)) 
 DF <- DF %>% dplyr::mutate(sampleB = dplyr::recode(fileName, !!!recode_contrast)) 
 DF <- DF %>% dplyr::mutate(Design = dplyr::recode(fileName, !!!recode_design)) 
 
+
 DF <- DF %>% 
   mutate(sampleX = ifelse(sign(log2FoldChange) == 1, sampleA, sampleB)) 
 
 DF %>% 
-  count(fileName, Design, sampleX)
+  count(fileName, Design, sampleA, sampleB, sampleX) %>% view()
 
-DF %>% filter()
-gene2ven <- split(strsplit(DF$transcript, ";") , DF$sampleX)
+DF <- DF %>%
+  filter(fileName %in% c("DEG_Cao_Bas_BLA.csv", "DEG_Cao_Bas_LOL.csv", "DEG_Cte_Bas_LOL.csv", "DEG_Cte_Bas_BLA.csv")) %>%
+  filter(sampleX != "Basal")
+
+DF %>% 
+  count(sampleB) 
+# 
+# 
+
+gene2ven <- split(strsplit(DF$transcript, ";") , DF$Design)
 
 gene2ven <- lapply(gene2ven, unlist)
 
 ggVennDiagram(gene2ven) + scale_fill_gradient(low="grey90",high = "red")
 
-query_groups <- c("BLA", "LOL")
-  
-q <- which(names(gene2ven) %in% query_groups)
+ggVennDiagram(gene2ven[1:2])
+ggVennDiagram(gene2ven[3:4])
 
-ggVennDiagram(gene2ven[q])
+# query_groups <- c("BLA", "LOL")
+  
+# q <- which(names(gene2ven) %in% query_groups)
+
+# ggVennDiagram(gene2ven[q])
 
 
 # step 2 -----
@@ -115,9 +142,12 @@ f <- list.files(path = path, pattern = "isoforms.counts_experimental.matrix", fu
 
 dim(M <- read.delim(f, row.names = 1))
 keep <-  rownames(M) %in% query
-dim(M[keep,])
+dim(M <- M[keep,])
 
-M <- as(M[keep,], "matrix")
+keep <-  !grepl("Reg", colnames(M))
+dim( M <- M[,keep])
+
+M <- as(M, "matrix")
 
 PCAdf <- PCA(M)
 
@@ -148,8 +178,8 @@ PCAdf_ %>%
     legend.key.height = unit(0.2, "mm")) -> p
 
 p + 
-  geom_point(aes(color = Site), shape = 1, size = 5) + 
-  ggrepel::geom_text_repel(aes(label = Condition), family = "GillSans")
+  geom_point(aes(color = Condition), shape = 1, size = 7) + 
+  ggrepel::geom_text_repel(aes(label = Site), family = "GillSans")
 
 
 
@@ -179,8 +209,9 @@ row_group_means <- function(M, groups) {
 }
 
 
-M <- row_group_means(M, groups)
+# M <- row_group_means(M, groups)
 
+# Cont. .
 M <- apply(M, 2, z_scores)
 
 heatmap(M)
@@ -202,15 +233,15 @@ order_genes <- hc_genes$labels[h$rowInd]
 #   left_join(Manifest, by = "LIBRARY_ID") %>%
 #   mutate(LIBRARY_ID = factor(LIBRARY_ID, levels = rev(hc_order)))
 
-names_to <- "groups" # "LIBRARY_ID"
+names_to <- "LIBRARY_ID" # "LIBRARY_ID"
 
 DATA <- data.frame(M) %>% 
   as_tibble(rownames = 'gene_id') %>%
   pivot_longer(cols = colnames(M), values_to = 'fill', names_to = names_to) %>%
-  # left_join(Manifest, by = names_to) %>%
-  # mutate(LIBRARY_ID = factor(LIBRARY_ID, levels = rev(hc_order)))
-  mutate(groups = factor(groups, levels = rev(hc_order))) %>%
-  left_join(distinct(Manifest, Condition, Site, groups), by = names_to) 
+  left_join(Manifest, by = names_to) %>%
+  mutate(LIBRARY_ID = factor(LIBRARY_ID, levels = rev(hc_order)))
+  # mutate(groups = factor(groups, levels = rev(hc_order))) %>%
+  # left_join(distinct(Manifest, Condition, Site, groups), by = names_to) 
 
 # If additional labels are provided, such as uniprot, etc.
 
