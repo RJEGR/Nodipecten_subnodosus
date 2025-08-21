@@ -1,5 +1,7 @@
 
 
+# Evaluate what desing group is significant for the multiple contrast analysis
+# Then re-doing deg analysis using 
 
 rm(list = ls())
 
@@ -23,20 +25,25 @@ datExpr <- round(datExpr)
 
 .colData <- list.files(dir, pattern = "metadata_experimental.tsv", full.names = T) 
 
-.colData <- read_tsv(.colData)
+.colData <- read_tsv(.colData) %>% filter(Condition != "Reg")
 
 Manifest <- .colData %>% mutate(design = paste(Site, Condition, sep = "_")) %>%
   mutate_if(is.character, as.factor)
 
 
-DEGS <- read_rds(paste0(file.path(dir, subdir), "/p05_DESEQ_multiple_contrast.rds")) %>%
+DEGS_condition <- read_rds(paste0(file.path(dir, subdir), "/p05_DESEQ_multiple_contrast_condition.rds")) %>%
   drop_na(padj) %>%
-  filter(abs(log2FoldChange) > 2 & padj < 0.05) 
+  filter(abs(log2FoldChange) > 2 & padj < 0.05)
+
+DEGS <- read_rds(paste0(file.path(dir, subdir), "/p05_DESEQ_multiple_contrast.rds")) %>%
+  filter(sampleA != "BLA_Reg" & !sampleB  %in% c("BLA_Reg", "LOL_Reg")) %>%
+  drop_na(padj) %>%
+  filter(abs(log2FoldChange) > 2 & padj < 0.05)
+
 
 genes <- DEGS %>% distinct(ids) %>% pull(ids)
 
 genes <- structure(genes, names = genes)
-# genes <- c(QUERYTOP, OTHER)
 
 sum(keep <- rownames(datExpr) %in% sort(unique(names(genes))))
 
@@ -48,6 +55,10 @@ identical(rownames(datExpr), names(genes))
 
 rownames(datExpr) <- genes
 
+
+keep_cols <- colnames(datExpr) %in% levels(Manifest$Library_ID)
+
+datExpr <- round(datExpr[,keep_cols])
 
 DATA <- datExpr %>%  as_tibble(rownames = 'gene') %>% 
   pivot_longer(-gene, values_to = "expression", names_to = "Library_ID") %>%
@@ -110,7 +121,7 @@ fit_model <- function(data, formula) {
 
 vars <- c("Condition","Site")
 
-fit_model(DATA, formula = "expression ~ Condition")
+# fit_model(DATA, formula = "expression ~ Condition + Site")
 
 fit_data <- list()
 
@@ -136,12 +147,7 @@ fitdf <- fitdf %>%
 
 fitdf
 
-recode_to <- c(  `Control` = "Control",
-  `No.metastasis`= "No metastasis", `Metastasis` = "Metastasis", 
-  `Stage.I` = "Stage I", `Stage.II` = "Stage II", `Stage.III` = "Stage III", 
-  `EDAD` = "Age")
-
-fitdf %>% count(term, Intercept)
+# recode_to <- c(  `Control` = "Control")
 
 p <- fitdf %>%
   mutate(term = ifelse(Intercept == "Site" & grepl("Intercept", term), "Site_BLA", term)) %>%
@@ -152,21 +158,20 @@ p <- fitdf %>%
   mutate(xmin = estimate-std.error, xmax = estimate+std.error) %>%
   ggplot(aes(y = term, x = estimate)) + # color = Intercept
   facet_grid(facet~ ., scales = "free", space = "free") +
-  geom_point(size = 0.5) +
+  geom_point(size = 0.5,   color="gray40") +
   geom_text(aes(x = x_star, label = star),  
-    vjust = 0.5, hjust = -0.5, size= 2, 
-    color="black", 
+    vjust = 0.7, hjust = -0.3, size= 2, 
     # position=position_dodge(width = .5),
     family =  "GillSans") +
   geom_errorbar(aes(xmin = xmin, xmax = xmax), 
-    width = 0.1, alpha = 0.3, color = "black",
+    width = 0.1, alpha = 0.3, color = "gray40",
     # position=position_dodge(width = .5)
   ) +
   geom_vline(xintercept = 0, linetype="dashed", alpha=0.5, color = "black") +
   labs(
     y = "",
     x = "Effect Size") +
-  scale_x_continuous(limits = c(-50,200)) +
+  scale_x_continuous(limits = c(-100,200)) +
   theme_bw(base_family = "GillSans", base_size = 12)  +
   theme(
     strip.background = element_rect(fill = 'grey89', color = 'white'),
@@ -184,11 +189,13 @@ ggsave(p, filename = 'MultipleContrast_effectSize.png',
 
 
 
-DataVizdf <- DEGS %>%
+DEGS_condition
+
+DataVizdf <- DEGS_condition %>%
   filter(padj < 0.05 & abs(log2FoldChange) > 2 ) %>%
   mutate(facet = ifelse( sign(log2FoldChange) == 1, "up in sampleA", "up in sampleB")) %>%
-  dplyr::count(sampleA, sampleB, facet, sort = T) 
-
+  mutate(sampleX = ifelse( sign(log2FoldChange) == 1, sampleA, sampleB)) %>%
+  dplyr::count(sampleA, sampleB, facet, sampleX, sort = T) 
 
 DataVizdf %>%
   # dplyr::mutate(facet = dplyr::recode_factor(sampleA, !!!recode_to)) %>%
@@ -228,28 +235,43 @@ P <- P +
     colour = "gray7", 
     arrow = arrow(ends = "first", length = unit(0.15, "cm")))
 
+P
+
 ggsave(P, filename = 'MultipleContrast_heatmap.png', 
   path = dir, width = 7, height = 3, device = png, dpi = 700)
 
 
-# upset (not working yet)
+# Estimar La frecuencia de degs, en cada contraste, resumindo a los factores del disenio experimental
+degs_df <- DataVizdf %>% group_by(sampleX) %>%  summarise(degs = sum(n), n_contrast = n()) %>% arrange(desc(degs))
 
-DEGS %>% count(sampleA, sampleB)
+DataVizdf %>%
+  fit_model(formula = "n ~ sampleX") %>%
+  filter(p.value < 0.05)
 
-UPSETDF <- DEGS %>%
-  filter(padj < 0.05 & abs(log2FoldChange) > 2 ) %>%
-  mutate(x = ifelse( sign(log2FoldChange) == 1, sampleA, sampleB)) %>%
-  separate(x, into = c("Site", "Condition"), sep = "_", remove = F) %>%
+# Falta identificar si para cada grupo en sampleX, hay duplicados, 
+
+
+UPSETDF <- DEGS_condition %>%
+  # filter(padj < 0.05 & abs(log2FoldChange) > 2 ) %>%
+  mutate(sampleX = ifelse( sign(log2FoldChange) == 1, sampleA, sampleB)) %>%
+  # separate(x, into = c("Site", "Condition"), sep = "_", remove = F) %>%
   # count(x, Site, Condition)
-  group_by(ids, Site, Condition) %>%
-  # group_by(ids) %>%
-  summarise(across(x, .fns = list), n = n()) 
+  # group_by(ids, Site, Condition) %>%
+  distinct(ids, sampleX) %>%
+  group_by(ids) %>%
+  summarise(across(sampleX, .fns = list), n = n()) 
+
+
+UPSETDF %>% filter(n == 1) %>% unnest(sampleX) %>% 
+  dplyr::count(sampleX, sort = T) %>%
+  dplyr::rename("unique_degs" = "n") %>%
+  left_join(degs_df)
 
 library(ggupset)
 
 UPSETDF %>%
-  filter(n != 1) %>% ungroup() %>%
-  ggplot(aes(x = x, group = 1)) + # , fill = SIGN
+  # filter(n == 1) %>% ungroup() %>%
+  ggplot(aes(x = sampleX, group = 1)) + # , fill = SIGN
   geom_bar(position = position_dodge(width = 1)) +
   geom_text(stat='count', aes(label = after_stat(count)), 
     position = position_dodge(width = 1), vjust = -0.5, family = "GillSans", size = 3.5) +
@@ -272,9 +294,26 @@ p1 <- p1 + theme(legend.position = "none",
   panel.grid.major.x = element_blank(),
   panel.grid.minor.x = element_blank(),
   strip.background.y = element_blank())
-# p1
+
+p1
+
 
 ggsave(p1, filename = 'UPSET.png', 
   path = dir, width = 7, height = 3, device = png, dpi = 700)
+
+
+library(ggVennDiagram)
+
+DF <- UPSETDF %>%  unnest(sampleX)
+
+gene2ven <- split(DF$ids, DF$sampleX)
+
+# gene2ven <- split(strsplit(UPSETDF$ids, "") , DF$Design)
+
+gene2ven <- lapply(gene2ven, unlist)
+
+str(gene2ven)
+
+ggVennDiagram(gene2ven[1:7]) + scale_fill_gradient(low="grey90",high = "red")
 
 
