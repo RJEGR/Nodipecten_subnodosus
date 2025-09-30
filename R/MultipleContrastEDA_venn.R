@@ -90,6 +90,25 @@ library(ggVennDiagram)
 
 DF <- UPSETDF %>%  unnest(sampleX)
 
+DF %>% dplyr::count(sampleX)
+
+recode_design <- c(
+  # = "Differences in populations (Basal site)"
+  "Bas" = "Basal",
+  "Cao" = "Global acclimatation\nto Cao challenge",
+  "Cte" = "Global acclimatation\nto Cte challenge",
+  "BLA_Bas" = "Basal",
+  "BLA_Cao" = "Specific acclim.\nto chaotic challenge (BLA)",
+  "BLA_Cte" = "Specific acclim.\nto cte challenge (BLA)",
+  "LOL_Bas" = "Basal",
+  "LOL_Cao" = "Specific acclim.\nto chaotic challenge (LOL)",
+  "LOL_Cte" = "Specific acclim.\nto cte challenge (LOL)")
+
+
+# DF <- DF %>% 
+#   dplyr::mutate(sampleX = dplyr::recode(sampleX, !!!recode_design)) %>% 
+#   filter(sampleX != "Basal")
+
 gene2ven <- split(DF$ids, DF$sampleX)
 
 # gene2ven <- split(strsplit(UPSETDF$ids, "") , DF$Design)
@@ -98,7 +117,9 @@ gene2ven <- lapply(gene2ven, unlist)
 
 str(gene2ven)
 
-ggVennDiagram(gene2ven) + scale_fill_gradient(low="grey90",high = "red")
+ggVennDiagram(gene2ven,label_font = "GillSans", label_size = 7,
+  relative_height = 1,relative_width = 2) + 
+  scale_fill_gradient(low="grey90",high = "red",)
 
 ggVennDiagram(gene2ven, force_upset = T, order.intersect.by = "size")
 
