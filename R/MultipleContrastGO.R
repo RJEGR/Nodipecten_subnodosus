@@ -35,6 +35,8 @@ QUERIES <- RES.P %>%
 
 QUERIES %>% dplyr::count(n)
 
+# Unique genes
+
 QUERIES <- QUERIES %>% filter(n == 1) %>% unnest(sampleX)
 
 QUERIES %>% dplyr::count(sampleX)
@@ -52,6 +54,8 @@ semdata <- read_rds(paste0(dir, orgdb, ".PB.rds"))
 go_file <- paste0(dir, 'Trinotate_transcripts.txt')
 
 MAP <- topGO::readMappings(go_file)
+
+# Continue w/....
 
 NAME2GO <- data.frame(ids = rep(names(MAP),
   sapply(MAP, length)),
@@ -131,7 +135,7 @@ REVIGO <- SEMANTIC_SEARCH(GO.IDS, orgdb, semdata)
 
 data <- left_join(data, REVIGO, by = c("GO.ID" = "go"))
 
-write_rds(data, file = paste0(dir, "p05_DESEQ_multiple_contrast_condition_deseq2topgo25_multiple_contrast_condition.rds"))
+# write_rds(data, file = paste0(dir, "p05_DESEQ_multiple_contrast_condition_deseq2topgo25_multiple_contrast_condition.rds"))
 
 data <- read_rds(paste0(dir, "p05_DESEQ_multiple_contrast_condition_deseq2topgo25_multiple_contrast_condition.rds"))
 
@@ -266,11 +270,11 @@ data %>%
   dplyr::mutate(sampleX = dplyr::recode_factor(sampleX, !!!recode_to)) %>%
   group_by(sampleX) %>%
   mutate(size = size / max(size)) %>%
-  filter(size > 0.05 & p.adj.ks < 0.05) %>%
+  filter(size > 0.05) %>% # & p.adj.ks < 0.05
   mutate(Term = fct_reorder(Term, size, .desc = F)) %>%
   ggplot(aes(y = Term, x = size, color = Condition)) + 
   ggforce::facet_col(Site ~., scales = "free_y", space = "free") +
-  geom_segment(aes(xend = 0, yend = Term), linewidth = 2) +
+  geom_segment(aes(xend = 0, yend = Term, alpha = -log10(p.adj.ks)), linewidth = 2) +
   labs(y = "Biological process", x = "Enrichment frac.") +
   # scale_color_viridis_c("padj", option = "viridis", direction = 1) +
   theme_bw(base_family = "GillSans", base_size = 12)  +
@@ -285,9 +289,9 @@ data %>%
 
 ggsave(p, filename = 'p05_DESEQ_multiple_contrast_deseq2topgo25.png', path = dir, width = 7, height = 10, device = png, dpi = 300)
 
-recode_to <- c(`Bas` = "A) 228/150 up-genes)",
-  `Cao` = "B) 80/66 up-genes)",
-  `Cte` = "C) 150/126 up-genes)")
+recode_to <- c(`Bas` = "A) Bas 228/150 up-genes)",
+  `Cao` = "B) Cao 80/66 up-genes)",
+  `Cte` = "C) Cte 150/126 up-genes)")
 
 
 DataViz <- data %>%
@@ -349,4 +353,5 @@ p2 <- p2 + scale_x_continuous(limits = c(-1.5, 1.5), breaks = seq(-1,1, by = 0.5
 
 ggsave(p2, filename = 'p05_DESEQ_multiple_contrast_deseq2topgo25_tornado.png', path = dir, width = 14, height = 5, device = png, dpi = 300)
 
+# Rerunn Go semantic for those intersected genes ====
 
